@@ -2,18 +2,29 @@ const router = require('express').Router();
 const User = require('../models/user.model');
 const { body, validationResult } = require('express-validator');
 const passport = require('passport');
+const connectEnsure = require('connect-ensure-login')
 
-router.get('/login', ensureNotAuthenticated, async (req, res, next) => {
-  res.render('login');
+router.get(
+  '/login', 
+  connectEnsure.ensureLoggedOut({redirectTo: '/'}), 
+  async (req, res, next) => {
+    res.render('login');
 });
 
-router.post('/login', ensureNotAuthenticated, passport.authenticate('local', {
-  successRedirect: "/user/profile",
-  failureRedirect: "/auth/login",
-  failureFlash: true,
+router.post(
+  '/login', 
+  connectEnsure.ensureLoggedOut({redirectTo: '/'}), 
+  passport.authenticate('local', {
+    // successRedirect: "/user/profile",
+    successReturnToOrRedirect: '/',
+    failureRedirect: "/auth/login",
+    failureFlash: true,
 }));
 
-router.get('/register', ensureNotAuthenticated, async (req, res, next) => {
+router.get(
+  '/register', 
+  connectEnsure.ensureLoggedOut({redirectTo: '/'}),
+  async (req, res, next) => {
   // for testing purpose only
   // req.flash('error', "some error");
   // req.flash('error', "some error 2");
@@ -23,10 +34,11 @@ router.get('/register', ensureNotAuthenticated, async (req, res, next) => {
   // const messages = req.flash();
   // res.redirect('/auth/login');
 
-  res.render('register');
+    res.render('register');
 });
 
-router.post('/register', ensureNotAuthenticated, [
+router.post('/register', 
+  connectEnsure.ensureLoggedOut({redirectTo: '/'}), [
     body('email')
       .trim()
       .isEmail()
@@ -75,7 +87,7 @@ router.post('/register', ensureNotAuthenticated, [
   // res.send(req.body);
 });
 
-router.get('/logout', ensureAuthenticated, async (req, res, next) => {
+router.get('/logout', connectEnsure.ensureLoggedIn({redirectTo: '/'}), async (req, res, next) => {
   req.logout((err) => {
     if(err) return next(err);
     res.redirect('/');
@@ -85,18 +97,18 @@ router.get('/logout', ensureAuthenticated, async (req, res, next) => {
 module.exports = router;
 
 
-function ensureAuthenticated(req, res, next) {
-  if(req.isAuthenticated()) {
-    next();
-  } else {
-    res.redirect('/auth/login');
-  }
-}
+// function ensureAuthenticated(req, res, next) {
+//   if(req.isAuthenticated()) {
+//     next();
+//   } else {
+//     res.redirect('/auth/login');
+//   }
+// }
 
-function ensureNotAuthenticated(req, res, next) {
-  if(req.isAuthenticated()) {
-    res.redirect('back');
-  } else {
-    next();
-  }
-}
+// function ensureNotAuthenticated(req, res, next) {
+//   if(req.isAuthenticated()) {
+//     res.redirect('back');
+//   } else {
+//     next();
+//   }
+// }

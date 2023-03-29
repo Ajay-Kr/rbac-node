@@ -6,6 +6,7 @@ require('dotenv').config();
 const session = require('express-session');
 const connectFlash = require('connect-flash');
 const passport = require('passport');
+const connectEnsureLogin = require('connect-ensure-login')
 
 // const MongoStore = new connectMongo(session);
 
@@ -27,7 +28,6 @@ app.use(
     cookie: {
       // secure: true, // can only be used while using https 
       // for production app it should be true so that we always get on https request
-
       httpOnly: true, // true so that it cookie cannot be read by browser using document.cookie
     },
   })
@@ -53,7 +53,10 @@ app.use((req, res, next) => {
 // Routes
 app.use('/', require('./routes/index.route'));
 app.use('/auth', require('./routes/auth.route'));
-app.use('/user', ensureAuthenticated, require('./routes/user.route'));
+app.use('/user', 
+  connectEnsureLogin.ensureLoggedIn({redirectTo: '/auth/login'}), 
+  require('./routes/user.route')
+);
 
 app.use((req, res, next) => {
   next(createHttpError.NotFound());
@@ -78,11 +81,11 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .catch((err) => console.log(err.message));
 
-// Simple authentication function
-function ensureAuthenticated(req, res, next) {
-  if(req.isAuthenticated()) {
-    next();
-  } else {
-    res.redirect('/auth/login');
-  }
-}
+// // Simple authentication function
+// function ensureAuthenticated(req, res, next) {
+//   if(req.isAuthenticated()) {
+//     next();
+//   } else {
+//     res.redirect('/auth/login');
+//   }
+// }
