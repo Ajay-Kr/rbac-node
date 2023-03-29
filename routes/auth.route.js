@@ -2,32 +2,34 @@ const router = require('express').Router();
 const User = require('../models/user.model');
 const { body, validationResult } = require('express-validator');
 const passport = require('passport');
-const connectEnsure = require('connect-ensure-login')
+const {ensureLoggedOut, ensureLoggedIn } = require('connect-ensure-login');
+const {registerValidator} = require('../utils/validators');
 
 router.get(
   '/login', 
-  connectEnsure.ensureLoggedOut({redirectTo: '/'}), 
+  ensureLoggedOut({redirectTo: '/'}), 
   async (req, res, next) => {
-    res.render('login');
-});
+      res.render('login');
+  });
 
 router.post(
   '/login', 
-  connectEnsure.ensureLoggedOut({redirectTo: '/'}), 
-  passport.authenticate('local', {
-    // successRedirect: "/user/profile",
-    successReturnToOrRedirect: '/',
-    failureRedirect: "/auth/login",
+  ensureLoggedOut({redirectTo: '/'}), 
+  passport.authenticate('local', 
+  {
+      // successRedirect: "/user/profile",
+      successReturnToOrRedirect: '/',
+      failureRedirect: "/auth/login",
     failureFlash: true,
 }));
 
 router.get(
   '/register', 
-  connectEnsure.ensureLoggedOut({redirectTo: '/'}),
+  ensureLoggedOut({redirectTo: '/'}),
   async (req, res, next) => {
-  // for testing purpose only
-  // req.flash('error', "some error");
-  // req.flash('error', "some error 2");
+    // for testing purpose only
+    // req.flash('error', "some error");
+    // req.flash('error', "some error 2");
   // req.flash('info', "some value");
   // req.flash('warning', "some value");
   // req.flash('success', "some value");
@@ -38,29 +40,14 @@ router.get(
 });
 
 router.post('/register', 
-  connectEnsure.ensureLoggedOut({redirectTo: '/'}), [
-    body('email')
-      .trim()
-      .isEmail()
-      .withMessage('Email must be a valid email')
-      .normalizeEmail()
-      .toLowerCase(),
-    body('password')
-      .trim()
-      .isLength(2)
-      .withMessage('Password length short, min 3 char required'),
-    body('password2').custom((value, {req}) => {
-      if(value !== req.body.password) {
-        throw new Error('Password do not match');
-      }
-      return true;
-    }),
-  ], 
+  
+  ensureLoggedOut({redirectTo: '/'}), 
+  registerValidator, 
   async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if(!errors.isEmpty()) {
-        errors.array().forEach(error => {
+      try {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()) {
+      errors.array().forEach(error => {
           req.flash('error', error.msg);
         });
         res.render('register', {email: req.body.email, 
@@ -87,10 +74,13 @@ router.post('/register',
   // res.send(req.body);
 });
 
-router.get('/logout', connectEnsure.ensureLoggedIn({redirectTo: '/'}), async (req, res, next) => {
-  req.logout((err) => {
-    if(err) return next(err);
-    res.redirect('/');
+router.get(
+  '/logout', 
+  ensureLoggedIn({redirectTo: '/'}), 
+  async (req, res, next) => {
+    req.logout((err) => {
+      if(err) return next(err);
+      res.redirect('/');
   });
 });
 

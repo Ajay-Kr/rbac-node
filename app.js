@@ -6,7 +6,7 @@ require('dotenv').config();
 const session = require('express-session');
 const connectFlash = require('connect-flash');
 const passport = require('passport');
-const connectEnsureLogin = require('connect-ensure-login')
+const {ensureLoggedIn} = require('connect-ensure-login')
 const {roles} = require('./utils/constants');
 // const MongoStore = new connectMongo(session);
 
@@ -55,12 +55,12 @@ app.use('/', require('./routes/index.route'));
 app.use('/auth', require('./routes/auth.route'));
 app.use(
   '/user', 
-  connectEnsureLogin.ensureLoggedIn({redirectTo: '/auth/login'}), 
+  ensureLoggedIn({redirectTo: '/auth/login'}), 
   require('./routes/user.route')
 );
 app.use(
   '/admin',
-  connectEnsureLogin.ensureLoggedIn({redirectTo: '/auth/login'}), 
+  ensureLoggedIn({redirectTo: '/auth/login'}), 
   ensureAdmin,
   require('./routes/admin.route')
 );
