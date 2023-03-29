@@ -7,7 +7,7 @@ const session = require('express-session');
 const connectFlash = require('connect-flash');
 const passport = require('passport');
 const connectEnsureLogin = require('connect-ensure-login')
-
+const {roles} = require('./utils/constants');
 // const MongoStore = new connectMongo(session);
 
 // Initialization
@@ -53,9 +53,16 @@ app.use((req, res, next) => {
 // Routes
 app.use('/', require('./routes/index.route'));
 app.use('/auth', require('./routes/auth.route'));
-app.use('/user', 
+app.use(
+  '/user', 
   connectEnsureLogin.ensureLoggedIn({redirectTo: '/auth/login'}), 
   require('./routes/user.route')
+);
+app.use(
+  '/admin',
+  connectEnsureLogin.ensureLoggedIn({redirectTo: '/auth/login'}), 
+  ensureAdmin,
+  require('./routes/admin.route')
 );
 
 app.use((req, res, next) => {
@@ -89,3 +96,21 @@ mongoose.connect(process.env.MONGO_URI, {
 //     res.redirect('/auth/login');
 //   }
 // }
+
+function ensureAdmin(req, res, next) {
+  if(req.user.role === roles.admin) {
+    next();
+  } else {
+    req.flash('warning', 'You are not authorized to see this page');
+    res.redirect('back');
+  }
+}
+
+function ensureModerator(req, res, next) {
+  if(req.user.role === roles.moderator) {
+    next();
+  } else {
+    req.flash('warning', 'You are not authorized to see this page');
+    res.redirect('back');
+  }
+}
